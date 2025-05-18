@@ -1,0 +1,91 @@
+//default.frag
+
+#version 330 core
+out vec4 FragColor;
+
+in vec3 color; // Nieu ywane w tym shaderze o wietlenia (kolor pochodzi z tekstury i  wiat a)
+in vec2 texCoord;
+in vec3 Normal;   // Zinterpolowana normalna z vertex shadera
+in vec3 crntPos;  // Zinterpolowana pozycja fragmentu w przestrzeni  wiata
+
+uniform sampler2D tex0; // Tekstura obiektu
+uniform vec4 lightColor; // Kolor  wiat a
+uniform vec3 lightPos;   // Pozycja  wiat a w przestrzeni  wiata
+uniform vec3 camPos;     // Pozycja kamery w przestrzeni  wiata
+
+void main()
+{
+    // O wietlenie otoczenia (ambient)
+    float ambient = 0.10f;
+
+    // O wietlenie rozproszone (diffuse)
+    vec3 normal = normalize(Normal); // Normalizuj normaln  fragmentu
+    vec3 lightDirection = normalize(lightPos - crntPos); // Kierunek od fragmentu do  wiat a
+    float diffuse = max(dot(normal, lightDirection), 0.0f); // Intensywno   diffuse
+
+    // O wietlenie odbite (specular)
+    float specularLight = 0.80f; // Intensywno    wiat a specular
+    vec3 viewDirection = normalize(camPos - crntPos); // Kierunek od fragmentu do kamery
+    vec3 reflectionDirection = reflect(-lightDirection, normal); // Kierunek odbicia  wiat a
+    float specAmount = pow(max(dot(viewDirection, reflectionDirection), 0.0f), 8); // Wsp czynnik specular (8 = po yskliwo  )
+    float specular = specAmount * specularLight * 0.5f ; // Finalna intensywno   specular
+
+    // Po  cz wszystko: kolor tekstury * kolor  wiat a * (suma komponent w o wietlenia)
+    FragColor = texture(tex0, texCoord) * lightColor * (diffuse + ambient + specular);
+}
+
+//default.vert
+
+
+#version 330 core
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aColor; // Nadal przekazywane, ale nieu ywane w nowym frag shaderze
+layout (location = 2) in vec2 aTex;
+layout (location = 3) in vec3 aNormal; // Nowe wej cie normalnych
+
+out vec3 color; // Nadal przekazywane
+out vec2 texCoord;
+out vec3 Normal; // Wyj cie normalnych do fragment shadera
+out vec3 crntPos; // Wyj cie pozycji w przestrzeni  wiata
+
+uniform mat4 camMatrix; // Po  czona macierz widoku * projekcji
+uniform mat4 model;     // Macierz modelu dla tego obiektu
+
+void main()
+{
+    // Oblicz pozycj  wierzcho ka w przestrzeni  wiata
+    crntPos = vec3(model * vec4(aPos, 1.0f));
+    // Przekszta   do przestrzeni obcinania
+    gl_Position = camMatrix * vec4(crntPos, 1.0f);
+
+    // Przeka  dane do fragment shadera
+    color = aColor; // Nadal przekazywane
+    texCoord = aTex;
+    // Normalne te  powinny by  transformowane (zwykle przez macierz normalnych),
+    // ale dla uproszczenia laboratorium przekazuje je bezpo rednio.
+    // W a ciwie: Normal = mat3(transpose(inverse(model))) * aNormal;
+    Normal = aNormal; // Uproszczenie z laboratorium
+}
+
+//light.frag
+
+#version 330 core
+out vec4 FragColor;
+uniform vec4 lightColor;
+void main()
+{
+FragColor = lightColor;
+}
+
+
+//light.vert
+
+#version 330 core
+layout (location = 0) in vec3 aPos;
+uniform mat4 model;
+uniform mat4 camMatrix;
+void main()
+{
+gl_Position = camMatrix * model *
+vec4(aPos, 1.0f);
+}
