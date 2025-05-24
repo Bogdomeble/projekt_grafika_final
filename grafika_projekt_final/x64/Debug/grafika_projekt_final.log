@@ -1,0 +1,5 @@
+﻿  main.cpp
+G:\Visual Studio Projekty\grafika_projekt_final\grafika_projekt_final\main.cpp(198,34): warning C4305: "argument": obcięcie z "double" do "GLfloat"
+G:\Visual Studio Projekty\grafika_projekt_final\grafika_projekt_final\main.cpp(198,28): warning C4305: "argument": obcięcie z "double" do "GLfloat"
+G:\Visual Studio Projekty\grafika_projekt_final\grafika_projekt_final\main.cpp(198,22): warning C4305: "argument": obcięcie z "double" do "GLfloat"
+  grafika_projekt_final.vcxproj -> G:\Visual Studio Projekty\grafika_projekt_final\x64\Debug\grafika_projekt_final.exe
