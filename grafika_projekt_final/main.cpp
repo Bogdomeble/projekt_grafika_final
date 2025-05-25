@@ -129,36 +129,21 @@ int main() {
     otherObjects.push_back(std::move(ceiling));
 
     // Walls
-    auto backWall = std::make_unique<Plane>(galleryWidth, galleryHeight, glm::vec3(0.8f), glm::vec2(5.0f, 2.0f));
-    if (wallTexture.ID != 0) backWall->setTexture(&wallTexture);
-    backWall->modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, galleryHeight / 2.0f, -galleryDepth / 2.0f));
-    backWall->modelMatrix = glm::rotate(backWall->modelMatrix, glm::radians(90.0f), glm::vec3(-1.0f, 0.0f, 0.0f));
-    backWall->modelMatrix = glm::rotate(backWall->modelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, -1.0f));
-    backWall->setupMesh();
-    galleryWalls.push_back(std::move(backWall));
+    auto createWall = [&](const glm::vec3& position, const glm::vec3& rotation, float width, float height, glm::vec2 texRepeat) {
+    auto wall = std::make_unique<Plane>(width, height, glm::vec3(0.8f), texRepeat);
+    if (wallTexture.ID != 0) wall->setTexture(&wallTexture);
+    wall->modelMatrix = glm::translate(glm::mat4(1.0f), position);
+    wall->modelMatrix = glm::rotate(wall->modelMatrix, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    wall->modelMatrix = glm::rotate(wall->modelMatrix, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    wall->modelMatrix = glm::rotate(wall->modelMatrix, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+    wall->setupMesh();
+    galleryWalls.push_back(std::move(wall));
+    };
 
-    auto frontWall = std::make_unique<Plane>(galleryWidth, galleryHeight, glm::vec3(0.8f), glm::vec2(5.0f, 2.0f));
-    if (wallTexture.ID != 0) frontWall->setTexture(&wallTexture);
-    frontWall->modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, galleryHeight / 2.0f, galleryDepth / 2.0f));
-    frontWall->modelMatrix = glm::rotate(frontWall->modelMatrix, glm::radians(270.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    frontWall->setupMesh();
-    galleryWalls.push_back(std::move(frontWall));
-
-    auto leftWall = std::make_unique<Plane>(galleryDepth, galleryHeight, glm::vec3(0.8f), glm::vec2(6.0f, 2.0f));
-    if (wallTexture.ID != 0) leftWall->setTexture(&wallTexture);
-    leftWall->modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-galleryWidth / 2.0f, galleryHeight / 2.0f, 0.0f));
-    leftWall->modelMatrix = glm::rotate(leftWall->modelMatrix, glm::radians(90.0f), glm::vec3(-1.0f, 0.0f, 0.0f));
-    leftWall->modelMatrix = glm::rotate(leftWall->modelMatrix, glm::radians(270.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    leftWall->setupMesh();
-    galleryWalls.push_back(std::move(leftWall));
-
-    auto rightWall = std::make_unique<Plane>(galleryDepth, galleryHeight, glm::vec3(0.8f), glm::vec2(6.0f, 2.0f));
-    if (wallTexture.ID != 0) rightWall->setTexture(&wallTexture);
-    rightWall->modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(galleryWidth / 2.0f, galleryHeight / 2.0f, 0.0f));
-    rightWall->modelMatrix = glm::rotate(rightWall->modelMatrix, glm::radians(90.0f), glm::vec3(-1.0f, 0.0f, 0.0f));
-    rightWall->modelMatrix = glm::rotate(rightWall->modelMatrix, glm::radians(270.0f), glm::vec3(0.0f, 0.0f, -1.0f)); // Corrected rotation for right wall texture
-    rightWall->setupMesh();
-    galleryWalls.push_back(std::move(rightWall));
+    createWall(glm::vec3(0.0f, galleryHeight / 2.0f, -galleryDepth / 2.0f), glm::vec3(90.0f, 0.0f, 0.0f), galleryWidth, galleryHeight, glm::vec2(5.0f, 2.0f));
+    createWall(glm::vec3(-galleryWidth / 2.0f, galleryHeight / 2.0f, 0.0f), glm::vec3(90.0f, 180.0f, 90.0f), galleryDepth, galleryHeight, glm::vec2(6.0f, 2.0f));
+    createWall(glm::vec3(galleryWidth / 2.0f, galleryHeight / 2.0f, 0.0f), glm::vec3(90.0f, 180.0f, -90.0f), galleryDepth, galleryHeight, glm::vec2(6.0f, 2.0f));
+    createWall(glm::vec3(0.0f, galleryHeight / 2.0f, galleryDepth / 2.0f), glm::vec3(90.0f, 180.0f, 180.0f), galleryWidth, galleryHeight, glm::vec2(5.0f, 2.0f));
 
     // --- Artworks ---
     float artHeightDefault = 1.5f; float artWidthDefault = 1.0f; float artDepthOffset = 0.051f; // Slightly more offset
