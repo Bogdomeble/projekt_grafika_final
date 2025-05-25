@@ -28,4 +28,3 @@ void main()
     // W a ciwie: Normal = mat3(transpose(inverse(model))) * aNormal;
     Normal = aNormal; // Uproszczenie z laboratorium
 }
-
