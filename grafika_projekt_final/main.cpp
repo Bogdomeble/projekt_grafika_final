@@ -60,7 +60,7 @@ int main() {
     Shader lightSourceShader("light.vert", "light.frag");
 
     // --- Camera ---
-    Camera camera(SCR_WIDTH, SCR_HEIGHT, glm::vec3(-0.100214, 1.61599, 5.2313));
+    Camera camera(SCR_WIDTH, SCR_HEIGHT, glm::vec3(-1.39074, 2.21854, 0.039506));
 
     // --- Textures ---
     // Existing textures
@@ -71,13 +71,13 @@ int main() {
     Texture metalTexture("metal_texture.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
     Texture WorldTexture("world.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
 
-    // New textures for additional artworks
+    // Artworks textures (art3.png to art8.png and one extra)
     Texture artTexture3("art3.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
-    Texture artTextureBrick1("brick.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
-    Texture artTextureBrick3("brick3.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
-    Texture artTextureMarble("marble.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
-    Texture artTextureMetal1("metal.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
-    Texture artTextureMetal3("metal3.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
+    Texture artTexture4("art4.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
+    Texture artTexture5("art5.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
+    Texture artTexture6("art6.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
+    Texture artTexture7("art7.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
+    Texture artTexture8("art8.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
     Texture artTexturePlaster("wall_plaster.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
 
 
@@ -88,12 +88,13 @@ int main() {
     if (artTexture2.ID == 0) std::cerr << "Warning: artTexture2 failed to load." << std::endl;
     if (metalTexture.ID == 0) std::cerr << "Warning: metalTexture failed to load." << std::endl;
     if (WorldTexture.ID == 0) std::cerr << "Warning: WorldTexture failed to load." << std::endl;
+
     if (artTexture3.ID == 0) std::cerr << "Warning: artTexture3 failed to load." << std::endl;
-    if (artTextureBrick1.ID == 0) std::cerr << "Warning: artTextureBrick1 failed to load." << std::endl;
-    if (artTextureBrick3.ID == 0) std::cerr << "Warning: artTextureBrick3 failed to load." << std::endl;
-    if (artTextureMarble.ID == 0) std::cerr << "Warning: artTextureMarble failed to load." << std::endl;
-    if (artTextureMetal1.ID == 0) std::cerr << "Warning: artTextureMetal1 failed to load." << std::endl;
-    if (artTextureMetal3.ID == 0) std::cerr << "Warning: artTextureMetal3 failed to load." << std::endl;
+    if (artTexture4.ID == 0) std::cerr << "Warning: artTexture4 failed to load." << std::endl;
+    if (artTexture5.ID == 0) std::cerr << "Warning: artTexture5 failed to load." << std::endl;
+    if (artTexture6.ID == 0) std::cerr << "Warning: artTexture6 failed to load." << std::endl;
+    if (artTexture7.ID == 0) std::cerr << "Warning: artTexture7 failed to load." << std::endl;
+    if (artTexture8.ID == 0) std::cerr << "Warning: artTexture8 failed to load." << std::endl;
     if (artTexturePlaster.ID == 0) std::cerr << "Warning: artTexturePlaster failed to load." << std::endl;
 
 
@@ -101,9 +102,13 @@ int main() {
     if (floorTexture.ID != 0) {
         floorTexture.texUnit(objectShader, "tex0", 0);
     }
-    else {
-        std::cerr << "WARNING: No valid textures to set 'tex0' sampler uniform for objectShader." << std::endl;
+    else if (wallTexture.ID != 0) {
+        wallTexture.texUnit(objectShader, "tex0", 0);
     }
+    else {
+        std::cerr << "WARNING: No valid default textures to set 'tex0' sampler uniform for objectShader." << std::endl;
+    }
+
 
     // --- Gallery Structure ---
     std::vector<std::unique_ptr<Shape>> galleryWalls;
@@ -113,7 +118,7 @@ int main() {
     float galleryWidth = 10.0f;
     float galleryDepth = 12.0f;
     float galleryHeight = 4.0f;
-    float artDisplayHeight = galleryHeight / 2.0f - 0.2f; // Consistent Y for art
+    float artDisplayHeight = galleryHeight / 2.0f - 0.2f;
 
     // Floor & Ceiling
     auto floor = std::make_unique<Plane>(galleryWidth, galleryDepth, glm::vec3(1.0f), glm::vec2(5.0f, 6.0f));
@@ -124,7 +129,7 @@ int main() {
     auto ceiling = std::make_unique<Plane>(galleryWidth, galleryDepth, glm::vec3(1.0f), glm::vec2(5.0f, 6.0f));
     ceiling->modelMatrix = glm::translate(ceiling->modelMatrix, glm::vec3(0.0f, galleryHeight, 0.0f));
     ceiling->modelMatrix = glm::rotate(ceiling->modelMatrix, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    if (floorTexture.ID != 0) ceiling->setTexture(&floorTexture); // Assuming same texture for ceiling
+    if (floorTexture.ID != 0) ceiling->setTexture(&floorTexture);
     ceiling->setupMesh();
     otherObjects.push_back(std::move(ceiling));
 
@@ -145,10 +150,11 @@ int main() {
     createWall(glm::vec3(galleryWidth / 2.0f, galleryHeight / 2.0f, 0.0f), glm::vec3(90.0f, 180.0f, -90.0f), galleryDepth, galleryHeight, glm::vec2(6.0f, 2.0f));
     createWall(glm::vec3(0.0f, galleryHeight / 2.0f, galleryDepth / 2.0f), glm::vec3(90.0f, 180.0f, 180.0f), galleryWidth, galleryHeight, glm::vec2(5.0f, 2.0f));
 
-    // --- Artworks ---
-    float artHeightDefault = 1.5f; float artWidthDefault = 1.0f; float artDepthOffset = 0.051f; // Slightly more offset
 
-    // Existing Art 1 (Back Wall)
+    // --- Artworks ---
+    float artHeightDefault = 1.5f; float artWidthDefault = 1.0f; float artDepthOffset = 0.051f;
+
+    // Existing Art 1 (art1.png - Back Wall)
     auto art1 = std::make_unique<Plane>(artWidthDefault, artHeightDefault, glm::vec3(1.0f), glm::vec2(1.0f, 1.0f));
     if (artTexture1.ID != 0) art1->setTexture(&artTexture1);
     art1->modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, artDisplayHeight, -galleryDepth / 2.0f + artDepthOffset));
@@ -156,74 +162,79 @@ int main() {
     art1->setupMesh();
     artworks.push_back(std::move(art1));
 
-    // Existing Art 2 (Left Wall) - Made it wider than tall
+    // Existing Art 2 (art2.png - Left Wall)
     auto art2 = std::make_unique<Plane>(artHeightDefault, artWidthDefault, glm::vec3(1.0f), glm::vec2(1.0f, 1.0f));
     if (artTexture2.ID != 0) art2->setTexture(&artTexture2);
-    art2->modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-galleryWidth / 2.0f + artDepthOffset, artDisplayHeight + 0.2f, 0.0f)); // Slightly higher
+    art2->modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-galleryWidth / 2.0f + artDepthOffset, artDisplayHeight + 0.2f, 0.0f));
     art2->modelMatrix = glm::rotate(art2->modelMatrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     art2->modelMatrix = glm::rotate(art2->modelMatrix, glm::radians(-90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    art2->modelMatrix = glm::rotate(art2->modelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     art2->setupMesh();
     artworks.push_back(std::move(art2));
 
-    // New Artworks
-    // Art 3 (art3.png) - Back Wall, center
+    // Art 3 (art3.png) - Back Wall, center (Reverting to your original rotation logic for this piece)
     auto newArt1 = std::make_unique<Plane>(artWidthDefault, artHeightDefault, glm::vec3(1.0f), glm::vec2(1.0f, 1.0f));
     if (artTexture3.ID != 0) newArt1->setTexture(&artTexture3);
     newArt1->modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, artDisplayHeight, -galleryDepth / 2.0f + artDepthOffset));
     newArt1->modelMatrix = glm::rotate(newArt1->modelMatrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    newArt1->modelMatrix = glm::rotate(newArt1->modelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    newArt1->modelMatrix = glm::rotate(newArt1->modelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)); // Restored this line from your original logic
     newArt1->setupMesh();
     artworks.push_back(std::move(newArt1));
 
-    // Art 4 (brick.png) - Back Wall, right
-    auto newArt2 = std::make_unique<Plane>(artWidthDefault * 1.2f, artHeightDefault * 0.8f, glm::vec3(1.0f), glm::vec2(1.0f, 1.0f)); // Different aspect
-    if (artTextureBrick1.ID != 0) newArt2->setTexture(&artTextureBrick1);
+    // Art 4 (art4.png) - Back Wall, right (Matches your original logic for the 'brick.png' at this spot)
+    auto newArt2 = std::make_unique<Plane>(artWidthDefault * 1.2f, artHeightDefault * 0.8f, glm::vec3(1.0f), glm::vec2(1.0f, 1.0f));
+    if (artTexture4.ID != 0) newArt2->setTexture(&artTexture4);
     newArt2->modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(2.5f, artDisplayHeight, -galleryDepth / 2.0f + artDepthOffset));
     newArt2->modelMatrix = glm::rotate(newArt2->modelMatrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    newArt2->modelMatrix = glm::rotate(newArt2->modelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     newArt2->setupMesh();
     artworks.push_back(std::move(newArt2));
 
-    // Art 5 (brick3.png) - Right Wall, center
-    auto newArt3 = std::make_unique<Plane>(artHeightDefault, artWidthDefault, glm::vec3(1.0f), glm::vec2(1.0f, 1.0f)); // Portrait on side wall
-    if (artTextureBrick3.ID != 0) newArt3->setTexture(&artTextureBrick3);
+    // Art 5 (art5.png) - Right Wall, center (Matches your original logic for 'brick3.png' at this spot)
+    auto newArt3 = std::make_unique<Plane>(artHeightDefault, artWidthDefault, glm::vec3(1.0f), glm::vec2(1.0f, 1.0f));
+    if (artTexture5.ID != 0) newArt3->setTexture(&artTexture5);
     newArt3->modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(galleryWidth / 2.0f - artDepthOffset, artDisplayHeight, 0.0f));
     newArt3->modelMatrix = glm::rotate(newArt3->modelMatrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    newArt3->modelMatrix = glm::rotate(newArt3->modelMatrix, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)); // Rotated for right wall
+    newArt3->modelMatrix = glm::rotate(newArt3->modelMatrix, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    newArt3->modelMatrix = glm::rotate(newArt3->modelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     newArt3->setupMesh();
     artworks.push_back(std::move(newArt3));
 
-    // Art 6 (marble.png) - Right Wall, towards back
-    auto newArt4 = std::make_unique<Plane>(artHeightDefault * 1.2f, artWidthDefault * 1.2f, glm::vec3(1.0f), glm::vec2(1.0f, 1.0f)); // Square-ish
-    if (artTextureMarble.ID != 0) newArt4->setTexture(&artTextureMarble);
+    // Art 6 (art6.png) - Right Wall, towards back (Matches your original logic for 'marble.png' at this spot)
+    auto newArt4 = std::make_unique<Plane>(artHeightDefault * 1.2f, artWidthDefault * 1.2f, glm::vec3(1.0f), glm::vec2(1.0f, 1.0f));
+    if (artTexture6.ID != 0) newArt4->setTexture(&artTexture6);
     newArt4->modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(galleryWidth / 2.0f - artDepthOffset, artDisplayHeight, -3.0f));
     newArt4->modelMatrix = glm::rotate(newArt4->modelMatrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     newArt4->modelMatrix = glm::rotate(newArt4->modelMatrix, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	newArt4->modelMatrix = glm::rotate(newArt4->modelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     newArt4->setupMesh();
     artworks.push_back(std::move(newArt4));
 
-    // Art 7 (metal.png) - Front Wall, left
+    // Art 7 (art7.png) - Front Wall, left (Reverting to your original rotation logic: -90 deg on X)
     auto newArt5 = std::make_unique<Plane>(artWidthDefault, artHeightDefault, glm::vec3(1.0f), glm::vec2(1.0f, 1.0f));
-    if (artTextureMetal1.ID != 0) newArt5->setTexture(&artTextureMetal1);
+    if (artTexture7.ID != 0) newArt5->setTexture(&artTexture7);
     newArt5->modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, artDisplayHeight, galleryDepth / 2.0f - artDepthOffset));
-    newArt5->modelMatrix = glm::rotate(newArt5->modelMatrix, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); // Rotated for front wall
+    newArt5->modelMatrix = glm::rotate(newArt5->modelMatrix, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); // Restored this line
+	//newArt5->modelMatrix = glm::rotate(newArt5->modelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)); // Restored this line
     newArt5->setupMesh();
     artworks.push_back(std::move(newArt5));
 
-    // Art 8 (metal3.png) - Front Wall, center
+    // Art 8 (art8.png) - Front Wall, center (Reverting to your original rotation logic: -90 deg on X)
     auto newArt6 = std::make_unique<Plane>(artWidthDefault, artHeightDefault, glm::vec3(1.0f), glm::vec2(1.0f, 1.0f));
-    if (artTextureMetal3.ID != 0) newArt6->setTexture(&artTextureMetal3);
+    if (artTexture8.ID != 0) newArt6->setTexture(&artTexture8);
     newArt6->modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, artDisplayHeight, galleryDepth / 2.0f - artDepthOffset));
-    newArt6->modelMatrix = glm::rotate(newArt6->modelMatrix, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    newArt6->modelMatrix = glm::rotate(newArt6->modelMatrix, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); // Restored this line
     newArt6->setupMesh();
     artworks.push_back(std::move(newArt6));
 
-    // Art 9 (wall_plaster.png) - Front Wall, right
+    // Art 9 (wall_plaster.png) - Front Wall, right (Reverting to your original rotation logic: -90 deg on X)
     auto newArt7 = std::make_unique<Plane>(artWidthDefault, artHeightDefault, glm::vec3(1.0f), glm::vec2(1.0f, 1.0f));
     if (artTexturePlaster.ID != 0) newArt7->setTexture(&artTexturePlaster);
     newArt7->modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, artDisplayHeight, galleryDepth / 2.0f - artDepthOffset));
-    newArt7->modelMatrix = glm::rotate(newArt7->modelMatrix, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    newArt7->modelMatrix = glm::rotate(newArt7->modelMatrix, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); // Restored this line
     newArt7->setupMesh();
     artworks.push_back(std::move(newArt7));
+
 
     // --- Sculpture ---
     auto pedestal = std::make_unique<Cylinder>(0.3f, 0.3f, 1.0f, 24, 1, true, glm::vec3(0.4f));
@@ -271,7 +282,7 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // --- Set Uniforms for Object Shader ---
-        objectShader.Activate(); // Activate object shader before setting its uniforms
+        objectShader.Activate();
         camera.Matrix(objectShader, "camMatrix");
         glUniform3fv(glGetUniformLocation(objectShader.ID, "lightPos"), 1, glm::value_ptr(pointLightPosition));
         glUniform4fv(glGetUniformLocation(objectShader.ID, "lightColor"), 1, glm::value_ptr(pointLightColor));
@@ -298,9 +309,9 @@ int main() {
         // --- Draw Light Source Visual ---
         lightSourceShader.Activate();
         camera.Matrix(lightSourceShader, "camMatrix");
-        glUniform4fv(glGetUniformLocation(lightSourceShader.ID, "lightColor"), 1, glm::value_ptr(pointLightColor)); // Pass light color to light shader
+        glUniform4fv(glGetUniformLocation(lightSourceShader.ID, "lightColor"), 1, glm::value_ptr(pointLightColor));
         lightVisual->draw(lightSourceShader);
-
+		camera.printData();
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -317,13 +328,13 @@ int main() {
     metalTexture.Delete();
     WorldTexture.Delete();
 
-    // Delete new textures
+    // Delete art textures
     artTexture3.Delete();
-    artTextureBrick1.Delete();
-    artTextureBrick3.Delete();
-    artTextureMarble.Delete();
-    artTextureMetal1.Delete();
-    artTextureMetal3.Delete();
+    artTexture4.Delete();
+    artTexture5.Delete();
+    artTexture6.Delete();
+    artTexture7.Delete();
+    artTexture8.Delete();
     artTexturePlaster.Delete();
 
     objectShader.Delete();
