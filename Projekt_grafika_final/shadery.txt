@@ -1,0 +1,125 @@
+//default.frag
+
+#version 330 core
+out vec4 FragColor;
+
+in vec3 color;     // Unused (color from texture and light)
+in vec2 texCoord;
+in vec3 Normal;    // Interpolated normal from vertex shader
+in vec3 crntPos;   // Interpolated fragment position in world space
+
+struct PointLight {
+    vec3 position;
+    vec4 color;
+};
+
+#define MAX_POINT_LIGHTS 4
+uniform PointLight pointLights[MAX_POINT_LIGHTS];
+uniform int numActiveLights;
+
+uniform sampler2D tex0;
+uniform vec3 camPos;
+
+void main()
+{
+    // Normalize the normal vector
+    vec3 norm = normalize(Normal);
+    // Sample the texture color
+    vec4 textureColorSample = texture(tex0, texCoord);
+    // Calculate the view direction
+    vec3 viewDir = normalize(camPos - crntPos);
+
+    // Define ambient lighting strength
+    float ambientStrength = 0.10f;
+    // Calculate ambient lighting
+    vec3 ambient = ambientStrength * vec3(1.0, 1.0, 1.0); // General ambient light
+
+    // Accumulate light contributions from all point lights
+    vec3 totalLightContribution = vec3(0.0);
+
+    // Iterate through active point lights
+    for (int i = 0; i < numActiveLights; ++i)
+    {
+        // Calculate the direction from the fragment to the light
+        vec3 lightDir = normalize(pointLights[i].position - crntPos);
+
+        // Diffuse lighting calculation
+        float diff = max(dot(norm, lightDir), 0.0f);
+        vec3 diffuse = diff * pointLights[i].color.rgb;
+
+        // Specular lighting calculation
+        float specularStrength = 0.75f; // Specular intensity (adjust as needed)
+        float shininess = 32.0f;      // Shininess (higher value = smaller, sharper highlight)
+                                      // For very smooth surfaces like metal/glass: 64, 128 or more
+                                      // For matte surfaces: 8, 16
+
+        // Calculate the reflection direction
+        vec3 reflectDir = reflect(-lightDir, norm);
+        // Calculate the specular amount
+        float specAmount = pow(max(dot(viewDir, reflectDir), 0.0f), shininess);
+        // Calculate the specular component
+        vec3 specular = specAmount * specularStrength * pointLights[i].color.rgb;
+
+        // Accumulate the diffuse and specular contributions
+        totalLightContribution += diffuse + specular;
+    }
+
+    // Calculate the final color
+    vec3 finalColor = (ambient + totalLightContribution) * textureColorSample.rgb;
+    // Set the fragment color
+    FragColor = vec4(finalColor, textureColorSample.a) ;
+}
+//default.vert
+
+#version 330 core
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aColor; // Still passed, but unused
+layout (location = 2) in vec2 aTex;
+layout (location = 3) in vec3 aNormal; // Normal input
+
+out vec3 color;     // Still passed
+out vec2 texCoord;
+out vec3 Normal;    // Normal output to fragment shader
+out vec3 crntPos;   // World space position output
+
+uniform mat4 camMatrix; // Combined view * projection matrix
+uniform mat4 model;     // Model matrix for this object
+
+void main()
+{
+    // Calculate the vertex position in world space
+    crntPos = vec3(model * vec4(aPos, 1.0f));
+    // Transform to clip space
+    gl_Position = camMatrix * vec4(crntPos, 1.0f);
+
+    // Pass data to the fragment shader
+    color = aColor;
+    texCoord = aTex;
+
+    // Correct normal transformation
+    // Use mat3(transpose(inverse(model))) to transform normals.
+    // This is important if the model is scaled non-uniformly.
+    Normal = mat3(model) * aNormal;
+}
+//light.frag
+
+#version 330 core
+out vec4 FragColor;
+uniform vec4 lightColor;
+void main()
+{
+FragColor = lightColor;
+}
+
+
+//light.vert
+
+#version 330 core
+layout (location = 0) in vec3 aPos;
+uniform mat4 model;
+uniform mat4 camMatrix;
+void main()
+{
+gl_Position = camMatrix * model *
+vec4(aPos, 1.0f);
+}
