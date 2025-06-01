@@ -37,7 +37,6 @@
     *   [light.vert](#lightvert-light-source-vertex-shader)
     *   [light.frag](#lightfrag-light-source-fragment-shader)
 6.  [Build and Run](#6-build-and-run)
-7.  [Future Improvements](#7-future-improvements)
 
 ---
 
@@ -470,20 +469,3 @@ The project is typically organized as follows:
     *   For Visual Studio, add all source files to the project.
 *   **Assets:** Place shader files (`.vert`, `.frag`) and texture image files (`.png`) in the same directory as the executable, or ensure the paths in the code correctly point to them.
 *   **Run:** Execute the compiled program.
-
-## 7. Future Improvements
-
-*   **Correct Normal Transformation:** Implement `Normal = mat3(transpose(inverse(model))) * aNormal;` in `default.vert` for accurate lighting under all object transformations.
-*   **Advanced Lighting:**
-    *   Support multiple light sources (arrays of light structs in shaders).
-    *   Implement different light types (directional lights, spotlights).
-    *   Add shadow mapping.
-*   **Material System:** Create a `Material` class or struct to define properties like diffuse color (if not textured), specular color, shininess, ambient color per object, and pass these to shaders. This would also clarify the use of per-vertex color vs. texture color.
-*   **Scene Graph:** For more complex scenes, a scene graph structure can help manage object hierarchies and transformations more effectively.
-*   **Improved Cylinder/Sphere Geometry:** Refine the geometry generation for smoother results, especially UV mapping and normals for complex cases like cones. Fix any remaining culling issues by perfecting winding orders.
-*   **Skybox/Environment:** Add a skybox for a more immersive background.
-*   **User Interface:** Use a library like ImGui for real-time tweaking of parameters, camera controls, light properties, etc.
-*   **Error Handling:** More robust error checking for OpenGL calls (`glGetError`).
-*   **Gamma Correction:** Implement gamma correction for more perceptually accurate colors.
-*   **More Shapes:** Add classes for Torus, Teapot, etc.
-*   **Model Loading:** Integrate a library like Assimp to load complex 3D models from files (e.g., `.obj`, `.fbx`).
