@@ -20,6 +20,7 @@
 #include "Sphere.h"
 #include "Cylinder.h"
 #include "light.h"
+#include "TrapezoidPrism.h"
 
 // Constants
 const unsigned int SCR_WIDTH = 1920;
@@ -66,10 +67,12 @@ int main() {
     Camera camera(SCR_WIDTH, SCR_HEIGHT, glm::vec3(-0.100214, 1.61599, 5.2313));
 
     // --- Textures ---
-    Texture floorTexture("floor_wood.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
-    Texture wallTexture("brick4.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
-    Texture metalTexture("metal_texture.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
+    Texture floorTexture("floor.jpg", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
+    Texture wallTexture("red.jpg", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
+    Texture metalTexture("marble.jpg", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
     Texture WorldTexture("world.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
+    Texture woodTextureH("wood_texture_horizontal.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
+    Texture woodTextureV("wood_texture_vertical.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
 
     Texture artTexture1("art1.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
     Texture artTexture2("art2.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
@@ -103,16 +106,49 @@ int main() {
     float galleryHeight = 4.0f;
     float artDisplayHeight = galleryHeight / 2.0f - 0.2f;
 
-    // Floor & Ceiling
+    // wall_frame parameters
+    float wall_frameHeight = 0.2f;
+    float wall_frameDepth = 0.1f;
+    float wall_frameBaseWidth = 0.1f;
+    float wall_frameTopWidth = 0.0f;
+
+    glm::vec3 wall_frameColor(0.3f, 0.2f, 0.1f);
+
+    // Create TrapezoidPrism objects for each wall
+    auto addWallwall_frame = [&](float width, float height, float depthTop, float depthBottom, const glm::vec3& color, const glm::vec3& position, const glm::vec3& rotation) {
+        auto wall_frame = std::make_unique<TrapezoidPrism>(width, height, depthTop, depthBottom, color);
+        wall_frame->setTexture(&woodTextureH);
+        wall_frame->modelMatrix = glm::translate(glm::mat4(1.0f), position);
+        wall_frame->modelMatrix = glm::rotate(wall_frame->modelMatrix, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+        wall_frame->modelMatrix = glm::rotate(wall_frame->modelMatrix, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+        wall_frame->modelMatrix = glm::rotate(wall_frame->modelMatrix, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+        wall_frame->setupMesh();
+        otherObjects.push_back(std::move(wall_frame));
+    };
+
+    // Wall 1: along -Z axis
+    addWallwall_frame(galleryWidth, wall_frameHeight, wall_frameTopWidth, wall_frameDepth, wall_frameColor, glm::vec3(0.0f, 0.0f, -galleryDepth / 2.0f - wall_frameDepth / 2.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+    // Wall 2: along -X axis
+    addWallwall_frame(galleryDepth, wall_frameHeight, wall_frameTopWidth, wall_frameDepth, wall_frameColor, glm::vec3(-galleryWidth / 2.0f - wall_frameDepth / 2.0f, 0.0f, 0.0f), glm::vec3(0.0f, 90.0f, 0.0f));
+
+    // Wall 3: along +X axis
+    addWallwall_frame(galleryDepth, wall_frameHeight, wall_frameTopWidth, wall_frameDepth, wall_frameColor, glm::vec3(galleryWidth / 2.0f + wall_frameDepth / 2.0f, 0.0f, 0.0f), glm::vec3(0.0f, -90.0f, 0.0f));
+
+    // Wall 4: along +Z axis
+    addWallwall_frame(galleryWidth, wall_frameHeight, wall_frameTopWidth, wall_frameDepth, wall_frameColor, glm::vec3(0.0f, 0.0f, galleryDepth / 2.0f + wall_frameDepth / 2.0f), glm::vec3(0.0f, 180.0f, 0.0f));
+
+    // Floor
     auto floor_obj = std::make_unique<Plane>(galleryWidth, galleryDepth, glm::vec3(1.0f), glm::vec2(5.0f, 6.0f)); // Renamed variable from 'floor' to 'floor_obj'
     if (floorTexture.ID != 0) floor_obj->setTexture(&floorTexture);
     floor_obj->setupMesh();
     otherObjects.push_back(std::move(floor_obj));
 
-    auto ceiling = std::make_unique<Plane>(galleryWidth, galleryDepth, glm::vec3(1.0f), glm::vec2(5.0f, 6.0f));
-    ceiling->modelMatrix = glm::translate(ceiling->modelMatrix, glm::vec3(0.0f, galleryHeight, 0.0f));
+    // Ceiling
+    auto ceiling = std::make_unique<Plane>(galleryWidth, galleryDepth, glm::vec3(1.0f), glm::vec2(1.0f, 1.0f));
+    ceiling->modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, galleryHeight, 0.0f));
     ceiling->modelMatrix = glm::rotate(ceiling->modelMatrix, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    if (floorTexture.ID != 0) ceiling->setTexture(&floorTexture);
+    if (wallTexture.ID != 0) ceiling->setTexture(&wallTexture);
     ceiling->setupMesh();
     otherObjects.push_back(std::move(ceiling));
 
@@ -126,12 +162,12 @@ int main() {
         wall->modelMatrix = glm::rotate(wall->modelMatrix, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
         wall->setupMesh();
         galleryWalls.push_back(std::move(wall));
-        };
+    };
 
-    createWall(glm::vec3(0.0f, galleryHeight / 2.0f, -galleryDepth / 2.0f), glm::vec3(90.0f, 0.0f, 0.0f), galleryWidth, galleryHeight, glm::vec2(5.0f, 2.0f));
-    createWall(glm::vec3(-galleryWidth / 2.0f, galleryHeight / 2.0f, 0.0f), glm::vec3(90.0f, 180.0f, 90.0f), galleryDepth, galleryHeight, glm::vec2(6.0f, 2.0f));
-    createWall(glm::vec3(galleryWidth / 2.0f, galleryHeight / 2.0f, 0.0f), glm::vec3(90.0f, 180.0f, -90.0f), galleryDepth, galleryHeight, glm::vec2(6.0f, 2.0f));
-    createWall(glm::vec3(0.0f, galleryHeight / 2.0f, galleryDepth / 2.0f), glm::vec3(90.0f, 180.0f, 180.0f), galleryWidth, galleryHeight, glm::vec2(5.0f, 2.0f));
+    createWall(glm::vec3(0.0f, galleryHeight / 2.0f, -galleryDepth / 2.0f), glm::vec3(90.0f, 0.0f, 0.0f), galleryWidth, galleryHeight, glm::vec2(1.0f, 1.0f));
+    createWall(glm::vec3(-galleryWidth / 2.0f, galleryHeight / 2.0f, 0.0f), glm::vec3(90.0f, 180.0f, 90.0f), galleryDepth, galleryHeight, glm::vec2(1.0f, 1.0f));
+    createWall(glm::vec3(galleryWidth / 2.0f, galleryHeight / 2.0f, 0.0f), glm::vec3(90.0f, 180.0f, -90.0f), galleryDepth, galleryHeight, glm::vec2(1.0f, 1.0f));
+    createWall(glm::vec3(0.0f, galleryHeight / 2.0f, galleryDepth / 2.0f), glm::vec3(90.0f, 180.0f, 180.0f), galleryWidth, galleryHeight, glm::vec2(1.0f, 1.0f));
 
     // --- Artworks --- (original lambda addArt and its calls)
     float artHeightDefault = 1.5f;
@@ -147,7 +183,7 @@ int main() {
         art->modelMatrix = model;
         art->setupMesh();
         artworks.push_back(std::move(art));
-        };
+    };
 
     addArt(artWidthDefault, artHeightDefault, artTexture1,
         { -2.0f, artDisplayHeight, -galleryDepth / 2.0f + artDepthOffset },
@@ -188,6 +224,93 @@ int main() {
     addArt(artHeightDefault, artWidthDefault, artTexture11,
         { galleryWidth / 2.0f - artDepthOffset, artDisplayHeight, 3.0f },
         { {90.0f, {1.0f, 0.0f, 0.0f}}, {90.0f, {0.0f, 0.0f, 1.0f}}, {180.0f, {0.0f, 1.0f, 0.0f}} });
+
+    // --- 3D Frames for all artworks ---
+    float frameThickness = 0.05f; // Thickness of the frame bars
+    float frameDepth = 0.07f;     // How much the frame protrudes from the wall
+    glm::vec3 frameColor(0.2f, 0.12f, 0.05f); // Fallback color
+
+    // Helper: artwork parameters (width, height, translation, rotations, texture)
+    struct ArtFrameParams {
+        float width, height;
+        glm::vec3 translation;
+        std::vector<std::pair<float, glm::vec3>> rotations;
+    };
+    std::vector<ArtFrameParams> artParams = {
+        // artTexture1
+        {artWidthDefault, artHeightDefault, {-2.0f, artDisplayHeight, -galleryDepth / 2.0f + artDepthOffset}, { {90.0f, {1.0f, 0.0f, 0.0f}} }},
+        // artTexture2
+        {artHeightDefault * 6.5f, artWidthDefault * 3.0f, {-galleryWidth / 2.0f + artDepthOffset, artDisplayHeight + 0.2f, 0.0f}, { {90.0f, {1.0f, 0.0f, 0.0f}}, {-90.0f, {0.0f, 0.0f, 1.0f}}, {180.0f, {0.0f, 1.0f, 0.0f}} }},
+        // artTexture3
+        {artWidthDefault, artHeightDefault, {0.0f, artDisplayHeight, -galleryDepth / 2.0f + artDepthOffset}, { {90.0f, {1.0f, 0.0f, 0.0f}}, {180.0f, {0.0f, 1.0f, 0.0f}} }},
+        // artTexture4
+        {artWidthDefault * 1.2f, artHeightDefault * 0.8f, {2.5f, artDisplayHeight, -galleryDepth / 2.0f + artDepthOffset}, { {90.0f, {1.0f, 0.0f, 0.0f}}, {180.0f, {0.0f, 1.0f, 0.0f}} }},
+        // artTexture5
+        {artHeightDefault, artWidthDefault, {galleryWidth / 2.0f - artDepthOffset, artDisplayHeight, 0.0f}, { {90.0f, {1.0f, 0.0f, 0.0f}}, {90.0f, {0.0f, 0.0f, 1.0f}}, {180.0f, {0.0f, 1.0f, 0.0f}} }},
+        // artTexture6
+        {artHeightDefault * 1.2f, artWidthDefault * 1.2f, {galleryWidth / 2.0f - artDepthOffset, artDisplayHeight, -3.0f}, { {90.0f, {1.0f, 0.0f, 0.0f}}, {90.0f, {0.0f, 0.0f, 1.0f}}, {180.0f, {0.0f, 1.0f, 0.0f}} }},
+        // artTexture7
+        {artWidthDefault, artHeightDefault, {-2.0f, artDisplayHeight, galleryDepth / 2.0f - artDepthOffset}, { {-90.0f, {1.0f, 0.0f, 0.0f}} }},
+        // artTexture8
+        {artWidthDefault, artHeightDefault, {0.0f, artDisplayHeight, galleryDepth / 2.0f - artDepthOffset}, { {-90.0f, {1.0f, 0.0f, 0.0f}} }},
+        // artTexture9
+        {artWidthDefault, artHeightDefault, {2.0f, artDisplayHeight, galleryDepth / 2.0f - artDepthOffset}, { {-90.0f, {1.0f, 0.0f, 0.0f}} }},
+        // artTexture11
+        {artHeightDefault, artWidthDefault, {galleryWidth / 2.0f - artDepthOffset, artDisplayHeight, 3.0f}, { {90.0f, {1.0f, 0.0f, 0.0f}}, {90.0f, {0.0f, 0.0f, 1.0f}}, {180.0f, {0.0f, 1.0f, 0.0f}} }},
+    };
+
+    for (size_t idx = 0; idx < artParams.size(); ++idx)
+    {
+        // Skip frame for the largest artwork (index 1)
+        if (idx == 1) continue;
+        const auto& art = artParams[idx];
+        float frameWidth = art.width + 0.10f;
+        float frameHeight = art.height + 0.10f;
+        float halfW = frameWidth / 2.0f;
+        float halfH = frameHeight / 2.0f;
+
+        // Build the base transform: translation + rotations (artwork's local space)
+        glm::vec3 protrudeVec(0.0f);
+        float protrude = frameDepth / 2.0f;
+
+        // Determine protrude direction based on artwork position (wall)
+        if (art.translation.z < -galleryDepth / 4.0f) { protrudeVec = glm::vec3(0, 0, protrude); }
+        else if (art.translation.z > galleryDepth / 4.0f) { protrudeVec = glm::vec3(0, 0, -protrude); }
+        else if (art.translation.x < -galleryWidth / 4.0f) { protrudeVec = glm::vec3(protrude, 0, 0); }
+        else if (art.translation.x > galleryWidth / 4.0f) { protrudeVec = glm::vec3(-protrude, 0, 0); }
+        else { protrudeVec = glm::vec3(0, 0, protrude); }
+
+        glm::mat4 baseModel = glm::translate(glm::mat4(1.0f), art.translation + protrudeVec);
+        for (const auto& rot : art.rotations) baseModel = glm::rotate(baseModel, glm::radians(rot.first), rot.second);
+        baseModel = glm::rotate(baseModel, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
+        // Vertical bars (left and right)
+        for (int i = 0; i < 2; ++i) {
+            float xOffset = (halfW - frameThickness / 2.0f) * (i == 0 ? 1.0f : -1.0f);
+            glm::mat4 model = baseModel * glm::translate(glm::mat4(1.0f), glm::vec3(xOffset, 0.0f, 0.0f));
+            auto bar = std::make_unique<Cube>(
+                frameThickness, frameHeight, frameDepth, frameColor
+            );
+            if (woodTextureV.ID != 0) bar->setTexture(&woodTextureV);
+            bar->modelMatrix = model;
+            bar->setupMesh();
+            otherObjects.push_back(std::move(bar));
+        }
+
+        // Horizontal bars (top and bottom)
+        float horizontalBarLength = frameWidth - 2 * frameThickness;
+        for (int i = 0; i < 2; ++i) {
+            float yOffset = (halfH - frameThickness / 2.0f) * (i == 0 ? 1.0f : -1.0f);
+            glm::mat4 model = baseModel * glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, yOffset, 0.0f));
+            auto bar = std::make_unique<Cube>(
+                horizontalBarLength, frameThickness, frameDepth, frameColor
+            );
+            if (woodTextureH.ID != 0) bar->setTexture(&woodTextureH);
+            bar->modelMatrix = model;
+            bar->setupMesh();
+            otherObjects.push_back(std::move(bar));
+        }
+    }
 
     // --- Sculpture --- (original code)
     auto pedestal = std::make_unique<Cylinder>(0.3f, 0.3f, 1.0f, 24, 1, true, glm::vec3(0.4f));
@@ -302,7 +425,7 @@ int main() {
             mainLight.visualRepresentation->draw(lightSourceShader);
         }
 
-        //camera.printData(); // Original printData call
+        camera.printData();
 
         glfwSwapBuffers(window);
         glfwPollEvents();
