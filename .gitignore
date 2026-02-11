@@ -1,32 +1,111 @@
-# Prerequisites
-*.d
+# Build directories
+build/
+Build/
+cmake-build-*/
+*.cmake
+CMakeFiles/
+CMakeCache.txt
+CMakeLists.txt.user
+cmake_install.cmake
+Makefile
 
-# Compiled Object files
-*.slo
-*.lo
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+.clangd
+.cache/
+compile_commands.json
+
+# Visual Studio
+.vs/
+*.vcxproj.user
+*.vcxproj.filters
+Debug/
+Release/
+x64/
+x86/
+ipch/
+*.sln
+*.VC.db
+*.VC.VC.opendb
+
+# Compiled files
 *.o
-*.obj
+*.a
+*.lib
+*.exe
+*.dll
+*.so
+*.dylib
+*.out
 
-# Precompiled Headers
+# Object files
+*.obj
 *.gch
 *.pch
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
+# Executable files
+ArtGallery
+ArtGallery.exe
+art_gallery
+art_gallery.exe
 
-# Fortran module files
-*.mod
-*.smod
+# Temporary files
+*.tmp
+*.bak
+*.backup
+*.log
+*.swp
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
 
-# Executables
-*.exe
-*.out
-*.app
+# Conan and package managers
+conan.lock
+conanbuildinfo.cmake
+conaninfo.txt
+graph_info.json
+
+# vcpkg
+vcpkg_installed/
+.vcpkg-root
+
+# Node.js (if used for any build tools)
+node_modules/
+package-lock.json
+yarn.lock
+
+# OS-specific
+Thumbs.db
+.Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Misc
+*.patch
+*.diff
+.env
+.env.local
+secrets/
+private/
+
+# Old project structure (before refactoring)
+Projekt_grafika_final/
+
+# Generated documentation
+docs/html/
+docs/latex/
+doxygen_output/
