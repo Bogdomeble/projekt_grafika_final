@@ -1,149 +1,99 @@
-#include "camera.h"
-#include <GLFW/glfw3.h>
+#include "../include/camera.h"
 
 Camera::Camera(int width, int height, glm::vec3 position)
 {
     Camera::width = width;
     Camera::height = height;
-    Position = position;
-}
+    Camera::Position = position;
 
-void Camera::Matrix(Shader& shader, const char* uniform)
-{
-    // Set the camera matrix uniform in the shader
-    glUniformMatrix4fv(glGetUniformLocation(shader.ID, uniform), 1, GL_FALSE, glm::value_ptr(cameraMatrix));
+    yaw = -90.0f;
+    pitch = 0.0f;
+
+    // Initialize last mouse positions to the center of the screen
+    lastX = static_cast<float>(width) / 2.0f;
+    lastY = static_cast<float>(height) / 2.0f;
 }
 
 void Camera::updateMatrix(float FOVdeg, float nearPlane, float farPlane)
 {
-    // Initialize view and projection matrices
-    glm::mat4 view = glm::mat4(1.0f);
-    glm::mat4 projection = glm::mat4(1.0f);
-
-    // Calculate the view matrix using lookAt
-    view = glm::lookAt(Position, Position + Orientation, Up);
-    // Calculate the projection matrix using perspective
-    projection = glm::perspective(glm::radians(FOVdeg), (float)width / height, nearPlane, farPlane);
-
-    // Calculate and store the camera matrix (projection * view)
+    glm::mat4 view = glm::lookAt(Position, Position + Orientation, Up);
+    glm::mat4 projection = glm::perspective(glm::radians(FOVdeg),
+                                            static_cast<float>(width) / static_cast<float>(height),
+                                            nearPlane, farPlane);
     cameraMatrix = projection * view;
 }
 
-void Camera::Inputs(GLFWwindow* window)
+void Camera::Matrix(const Shader& shader, const char* uniform)
 {
-    // Calculate actual deltaTime
-    static float lastTime = glfwGetTime();
-    float currentTime = glfwGetTime();
-    deltaTime = currentTime - lastTime;
-    lastTime = currentTime;
-    
-    // Clamp deltaTime to prevent massive jumps (e.g., if app was paused)
-    // Max ~16ms per frame (60 FPS minimum)
-    if (deltaTime > 0.016f) {
-        deltaTime = 0.016f;
-    }
-    // Minimum frame time to avoid division issues
-    if (deltaTime < 0.001f) {
-        deltaTime = 0.001f;
-    }
+    glUniformMatrix4fv(glGetUniformLocation(shader.ID, uniform), 1, GL_FALSE, glm::value_ptr(cameraMatrix));
+}
 
-    // Close window if ESC key is pressed
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-    {
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
-    }
-
-    // Handle movement keys
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-    {
-        Position += speed * Orientation * deltaTime;
-    }
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-    {
-        Position += speed * -glm::normalize(glm::cross(Orientation, Up)) * deltaTime;
-    }
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-    {
-        Position += speed * -Orientation * deltaTime;
-    }
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-    {
-        Position += speed * glm::normalize(glm::cross(Orientation, Up)) * deltaTime;
-    }
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-    {
-        Position += speed * Up * deltaTime;
-    }
-    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
-    {
-        Position += speed * -Up * deltaTime;
-    }
-
-    // Handle speed modification with left shift
+void Camera::Inputs(GLFWwindow* window, float deltaTime)
+{
+    // --- Keyboard movement (Correct and Unchanged) ---
+    float current_speed = speed;
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
     {
-        speed = 10.0f;
+        current_speed *= 4.0f;
     }
-    else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE)
-    {
-        speed = 3.0f;
-    }
+    float velocity = current_speed * deltaTime;
 
-    // Handle mouse input for camera rotation
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) Position += Orientation * velocity;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) Position -= glm::normalize(glm::cross(Orientation, Up)) * velocity;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) Position -= Orientation * velocity;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) Position += glm::normalize(glm::cross(Orientation, Up)) * velocity;
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) Position += Up * velocity;
+    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) Position -= Up * velocity;
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(window, GLFW_TRUE);
+
+
+    // --- COMPLETELY REVISED MOUSE LOGIC ---
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
     {
-        // Hide mouse cursor
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
-        // Prevent camera jump on first click
+        double mouseX, mouseY;
+        glfwGetCursorPos(window, &mouseX, &mouseY);
+
+        // On the very first click, update lastX and lastY to the current mouse position
+        // This prevents the camera from jumping to the center of the screen.
         if (firstClick)
         {
-            glfwSetCursorPos(window, (width / 2), (height / 2));
+            lastX = static_cast<float>(mouseX);
+            lastY = static_cast<float>(mouseY);
             firstClick = false;
         }
 
-        double mouseX;
-        double mouseY;
-        // Get mouse coordinates
-        glfwGetCursorPos(window, &mouseX, &mouseY);
+        // Calculate the offset since the last frame
+        float xoffset = static_cast<float>(mouseX) - lastX;
+        float yoffset = lastY - static_cast<float>(mouseY); // Reversed since y-coordinates go from top to bottom
 
-        // Calculate mouse movement offsets with proper sensitivity scaling and frame-rate independence
-        // Calculate mouse movement offsets with proper sensitivity scaling and frame-rate independence
-        float rotX = sensitivity * (float)(mouseY - (height / 2)) / height * deltaTime * 50.0f;
-        float rotY = sensitivity * (float)(mouseX - (width / 2)) / width * deltaTime * 50.0f;
+        // Update last positions for the next frame
+        lastX = static_cast<float>(mouseX);
+        lastY = static_cast<float>(mouseY);
 
-        // Calculate the new orientation based on mouse input
-        glm::vec3 newOrientation = glm::rotate(Orientation, glm::radians(-rotX),
-            glm::normalize(glm::cross(Orientation, Up)));
+        // Apply sensitivity
+        xoffset *= sensitivity;
+        yoffset *= sensitivity;
 
-        // Restrict vertical movement to prevent flipping
-        if (abs(glm::angle(newOrientation, Up) - glm::radians(90.0f)) <=
-            glm::radians(85.0f))
-        {
-            Orientation = newOrientation;
-        }
+        yaw += xoffset;
+        pitch += yoffset;
 
-        // Rotate the orientation horizontally
-        Orientation = glm::rotate(Orientation, glm::radians(-rotY), Up);
+        // Clamp pitch
+        if (pitch > 89.0f) pitch = 89.0f;
+        if (pitch < -89.0f) pitch = -89.0f;
 
-        // Reset mouse position to center
-        glfwSetCursorPos(window, (width / 2), (height / 2));
+        // Calculate and set the new orientation vector
+        glm::vec3 newOrientation;
+        newOrientation.x = cosf(glm::radians(yaw)) * cosf(glm::radians(pitch));
+        newOrientation.y = sinf(glm::radians(pitch));
+        newOrientation.z = sinf(glm::radians(yaw)) * cosf(glm::radians(pitch));
+        Orientation = glm::normalize(newOrientation);
     }
     else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
     {
-        // Show cursor when not rotating
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        // Reset first click flag
+        // Reset firstClick flag so the next click will capture the new starting mouse position
         firstClick = true;
     }
-}
-
-void Camera::printData() {
-    // Cross-platform console output (without cursor repositioning)
-    std::cout << "Position: " << Position.x << ", " << Position.y << ", " << Position.z << "\n";
-    std::cout << "Orientation: " << Orientation.x << ", " << Orientation.y << ", " << Orientation.z << "\n";
-    std::cout << "Speed & sensitivity: " << deltaTime*speed << " , " << sensitivity << "\n";
-
-    // Flush the output stream to ensure immediate display
-    std::cout.flush();
 }

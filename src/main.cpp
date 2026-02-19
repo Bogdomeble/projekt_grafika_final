@@ -59,9 +59,16 @@ int main() {
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
+    // insert after window creation
+    glfwSetWindowCloseCallback(window, [](GLFWwindow* w){
+    glfwSetWindowShouldClose(w, GLFW_TRUE);
+    });
+
     // --- Shaders ---
-    Shader objectShader("assets/shaders/default.vert", "assets/shaders/default.frag"); // Uses the shader prepared for multiple lights
-    Shader lightSourceShader("assets/shaders/light.vert", "assets/shaders/light.frag");
+    try {
+        // Create shader programs (may throw on failure)
+        Shader objectShader("assets/shaders/default.vert", "assets/shaders/default.frag"); // Uses the shader prepared for multiple lights
+        Shader lightSourceShader("assets/shaders/light.vert", "assets/shaders/light.frag");
 
     // --- Camera ---
     Camera camera(SCR_WIDTH, SCR_HEIGHT, glm::vec3(-0.100214, 1.61599, 5.2313));
@@ -356,12 +363,12 @@ int main() {
     int frameCount = 0;
     double fpsUpdateTime = 0.0;
     double fps = 0.0;
-    
+
     while (!glfwWindowShouldClose(window)) {
         double currentTime = glfwGetTime();
         double deltaTime = currentTime - lastFrameTime;
         lastFrameTime = currentTime;
-        
+
         float currentFrame = static_cast<float>(currentTime);
 
         // Update FPS counter every 0.25 seconds
@@ -371,13 +378,13 @@ int main() {
             fps = frameCount / fpsUpdateTime;
             frameCount = 0;
             fpsUpdateTime = 0.0;
-            
+
             // Update window title with FPS
             std::string title = "Art Gallery - FPS: " + std::to_string(static_cast<int>(fps));
             glfwSetWindowTitle(window, title.c_str());
         }
 
-        camera.Inputs(window);
+        camera.Inputs(window, static_cast<float>(deltaTime));
         camera.updateMatrix(45.0f, 0.1f, 100.0f);
 
         // Animate light
@@ -447,7 +454,7 @@ int main() {
             mainLight.visualRepresentation->draw(lightSourceShader);
         }
 
-        camera.printData();
+        //camera.printData();
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -471,6 +478,21 @@ int main() {
     objectShader.Delete();
     lightSourceShader.Delete();
 
+    } catch (const std::exception& e) {
+        // Handle initialization/runtime errors (e.g. shader loading/compilation)
+        std::cerr << "Fatal error: " << e.what() << std::endl;
+
+        // Attempt best-effort cleanup of OpenGL resources and window/context
+        // Note: destructors for local objects will run during stack unwinding where appropriate.
+        if (window) {
+            // If window/context still valid, destroy it
+            glfwDestroyWindow(window);
+        }
+        glfwTerminate();
+        return EXIT_FAILURE;
+    }
+
+    // Normal termination path after successful try-block cleanup
     glfwDestroyWindow(window);
     glfwTerminate();
 

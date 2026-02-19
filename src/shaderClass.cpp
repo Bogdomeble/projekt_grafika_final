@@ -1,6 +1,7 @@
 #include "shaderClass.h"
 #include <iostream>
 #include <cstdlib>
+#include <stdexcept>
 
 // Reads a text file and returns its contents as a string
 std::string get_file_contents(const char* filename)
@@ -8,10 +9,8 @@ std::string get_file_contents(const char* filename)
 	std::ifstream in(filename, std::ios::binary);
 	if (!in.is_open())
 	{
-		std::cerr << "ERROR: Failed to open file: " << filename << std::endl;
-		std::cerr << "Make sure you're running the program from the build/bin/ directory" << std::endl;
-		std::cerr << "Expected path: " << filename << std::endl;
-		exit(EXIT_FAILURE);
+		throw std::runtime_error(std::string("ERROR: Failed to open file: ") + filename +
+			"\nMake sure you're running the program from the build/bin/ directory\nExpected path: " + filename);
 	}
 	
 	std::string contents;
@@ -50,8 +49,7 @@ Shader::Shader(const char* vertexFile, const char* fragmentFile)
 	if (!success)
 	{
 		glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-		std::cerr << "ERROR: Vertex shader compilation failed: " << infoLog << std::endl;
-		exit(EXIT_FAILURE);
+		throw std::runtime_error(std::string("ERROR: Vertex shader compilation failed: ") + infoLog);
 	}
 
 	// Create fragment shader object
@@ -66,8 +64,7 @@ Shader::Shader(const char* vertexFile, const char* fragmentFile)
 	if (!success)
 	{
 		glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-		std::cerr << "ERROR: Fragment shader compilation failed: " << infoLog << std::endl;
-		exit(EXIT_FAILURE);
+		throw std::runtime_error(std::string("ERROR: Fragment shader compilation failed: ") + infoLog);
 	}
 
 	// Create shader program
@@ -84,8 +81,7 @@ Shader::Shader(const char* vertexFile, const char* fragmentFile)
 	if (!success)
 	{
 		glGetProgramInfoLog(ID, 512, NULL, infoLog);
-		std::cerr << "ERROR: Shader program linking failed: " << infoLog << std::endl;
-		exit(EXIT_FAILURE);
+		throw std::runtime_error(std::string("ERROR: Shader program linking failed: ") + infoLog);
 	}
 
 	std::cout << "Shaders loaded and compiled successfully" << std::endl;
